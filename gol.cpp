@@ -2,7 +2,18 @@
 #include <string>
 #include <iostream>
 
-void step(){}
+void step(int* grid, int* gridNext, int size){
+	for (int i = 0; i < size; i++)
+		grid[i] = gridNext[i];
+}
+
+int wrapValue(int v, int vMax)
+{
+    // To generalize this, use modulo
+    if (v == -1) return vMax - 1;
+    if (v == vMax) return 0;
+    return v;
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -11,6 +22,7 @@ int main(int argc, char* argv[])
 	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
 	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
 	int grid[GRID_DIMENSION*GRID_DIMENSION] = {};
+	int gridNext[GRID_DIMENSION*GRID_DIMENSION] = {};
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 50), "Game of Life");
 
@@ -34,7 +46,9 @@ int main(int argc, char* argv[])
 				break;
 			case sf::Event::KeyPressed:
 				if (event.key.code == sf::Keyboard::N)
-					step();
+					step(grid, gridNext, GRID_DIMENSION*GRID_DIMENSION);
+				if (event.key.code == sf::Keyboard::Q)
+					window.close();
 				break;
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Left)
@@ -65,9 +79,26 @@ int main(int argc, char* argv[])
 				else
 					cell.setFillColor(sf::Color::Black);
 				window.draw(cell);
-			}
-		}
 
+				int neighborSum = 0;
+				for (int i = -1; i < 2; i++)
+					for (int j = -1; j < 2; j++)
+					{   
+						int xi = wrapValue(x + i, GRID_DIMENSION);
+						int yj = wrapValue(y + j, GRID_DIMENSION);
+						neighborSum += grid[xi + yj * GRID_DIMENSION];
+					}
+
+				int current = x + y * GRID_DIMENSION;
+				neighborSum -= grid[current];
+				gridNext[current] = grid[current];
+				if (grid[current] == 1 && (neighborSum < 2 || neighborSum > 3))
+					gridNext[current] = 0;
+				else if (neighborSum == 3)
+					gridNext[current] = 1;
+			}
+
+		}
 
 		window.draw(textNext);
 		window.display();
