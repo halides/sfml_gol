@@ -1,9 +1,14 @@
 #include <SFML/Graphics.hpp>
+#include <string>
 #include <iostream>
 
 int main(int argc, char* argv[]) 
 {
-	sf::RenderWindow window(sf::VideoMode(500,500), "Game of Life");
+	const int GRID_DIMENSION = std::stoi(argv[1]);
+	const int CELL_SIZE = std::stoi(argv[2]);
+	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
+
+	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH), "Game of Life");
 
 	while (window.isOpen())
     {
