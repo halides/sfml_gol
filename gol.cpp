@@ -1,35 +1,40 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <iostream>
+#include <random>
 
-void step(int* grid, int* gridNext, int size){
+void step(int* grid, int* gridNext, int size)
+{
 	for (int i = 0; i < size; i++)
 		grid[i] = gridNext[i];
 }
 
-int wrapValue(int v, int vMax)
+void randomize(int* grid, int size)
 {
-    // To generalize this, use modulo
-    if (v == -1) return vMax - 1;
-    if (v == vMax) return 0;
-    return v;
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(1,10);
+
+	for (int i = 0; i < size; i++)
+		grid[i] = (dist(rng) == 1) ? 1 : 0;
 }
 
 int main(int argc, char* argv[]) 
 {
 	const int GRID_DIMENSION = std::stoi(argv[1]);
+	const int N_CELLS = GRID_DIMENSION*GRID_DIMENSION;
 	const int CELL_SIZE = std::stoi(argv[2]);
-	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
 	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
-	int grid[GRID_DIMENSION*GRID_DIMENSION] = {};
-	int gridNext[GRID_DIMENSION*GRID_DIMENSION] = {};
-
-	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 50), "Game of Life");
+	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
+	int grid[N_CELLS] = {};
+	int gridNext[N_CELLS] = {};
+	bool run_state = false;
+	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 100), "Game of Life");
 
 	sf::Font font;
 	font.loadFromFile("./fonts/arial.ttf");
 
-	sf::Text textNext("Press 'n' to step.", font);
+	sf::Text textNext("Press 'n' to step,\n'p' to play/pause,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
 	textNext.setCharacterSize(15);
 	textNext.setPosition(10, WINDOW_SIDE_LENGTH + 5);
 	textNext.setFillColor(sf::Color::White);
@@ -46,9 +51,13 @@ int main(int argc, char* argv[])
 				break;
 			case sf::Event::KeyPressed:
 				if (event.key.code == sf::Keyboard::N)
-					step(grid, gridNext, GRID_DIMENSION*GRID_DIMENSION);
+					step(grid, gridNext, N_CELLS);
 				if (event.key.code == sf::Keyboard::Q)
 					window.close();
+				if (event.key.code == sf::Keyboard::P)
+					run_state = !run_state;
+				if (event.key.code == sf::Keyboard::R)
+					randomize(grid, N_CELLS);
 				break;
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Left)
@@ -68,25 +77,21 @@ int main(int argc, char* argv[])
 		{ 
 			for (int y = 0; y < GRID_DIMENSION; y++)
 			{ 
-				// draw cell
 				sf::RectangleShape cell;
 				cell.setPosition(x * CELL_SIZE, y * CELL_SIZE);
 				cell.setSize(CELL_VECTOR);
-//				cell.setOutlineThickness(1);
-//				cell.setOutlineColor(GRAY);
 				if (grid[x + y * GRID_DIMENSION] == 1)
 					cell.setFillColor(sf::Color::White);
 				else
 					cell.setFillColor(sf::Color::Black);
 				window.draw(cell);
 
+				//something funny going on at the edges :------)
 				int neighborSum = 0;
 				for (int i = -1; i < 2; i++)
 					for (int j = -1; j < 2; j++)
 					{   
-						int xi = wrapValue(x + i, GRID_DIMENSION);
-						int yj = wrapValue(y + j, GRID_DIMENSION);
-						neighborSum += grid[xi + yj * GRID_DIMENSION];
+						neighborSum += grid[x+i + (y+j) * GRID_DIMENSION];
 					}
 
 				int current = x + y * GRID_DIMENSION;
@@ -100,8 +105,11 @@ int main(int argc, char* argv[])
 
 		}
 
+		if (run_state) {
+			step(grid, gridNext, N_CELLS);
+		}
 		window.draw(textNext);
 		window.display();
+        sf::sleep(sf::milliseconds(50));
 	}
 }
-
