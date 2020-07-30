@@ -1,15 +1,40 @@
 #include <SFML/Graphics.hpp>
-#include <string>
 #include <iostream>
 #include <random>
 
-void step(int* grid, int* gridNext, int size)
+class GoL
+{
+	public:
+		GoL(int);
+		void step();
+		void clear();
+		void randomize();
+		bool get_cell_state(int, int);
+		void set_cell_state(int, int);
+
+	private:
+		int dimension;
+		
+};
+
+GoL::GoL(int size)
+{
+	
+}
+
+GoL::step(char* grid, char* gridNext, int size)
 {
 	for (int i = 0; i < size; i++)
 		grid[i] = gridNext[i];
 }
 
-void randomize(int* grid, int size)
+GoL::clear(char* grid, int size)
+{
+	for (int i = 0; i < size; i++)
+		grid[i] = 0;
+}
+
+GoL::randomize(char* grid, int size)
 {
     std::random_device dev;
     std::mt19937 rng(dev());
@@ -19,22 +44,40 @@ void randomize(int* grid, int size)
 		grid[i] = (dist(rng) == 1) ? 1 : 0;
 }
 
+bool GoL::get_cell_state(int x, int y)
+{
+}
+
+bool GoL::set_cell_state(int x, int y)
+{
+}
+
 int main(int argc, char* argv[]) 
 {
-	const int GRID_DIMENSION = std::stoi(argv[1]);
+	int GRID_DIMENSION;
+    int CELL_SIZE;
+
+	try {
+		GRID_DIMENSION = std::stoi(argv[1]);
+		CELL_SIZE = std::stoi(argv[2]);
+	} catch(...) {
+		std::cout << "Usage: ./gol <grid dimension> <pixels per cell>, both as integers\n";
+		return 1;
+	}
+
 	const int N_CELLS = GRID_DIMENSION*GRID_DIMENSION;
-	const int CELL_SIZE = std::stoi(argv[2]);
 	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
 	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
-	int grid[N_CELLS] = {};
-	int gridNext[N_CELLS] = {};
+	char grid[N_CELLS] = {};
+	char gridNext[N_CELLS] = {};
 	bool run_state = false;
-	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 100), "Game of Life");
+
+	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 110), "Game of Life");
 
 	sf::Font font;
 	font.loadFromFile("./fonts/arial.ttf");
 
-	sf::Text textNext("Press 'n' to step,\n'p' to play/pause,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
+	sf::Text textNext("Press 'n' to step,\n'p' to play/pause,\n'c' to clear,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
 	textNext.setCharacterSize(15);
 	textNext.setPosition(10, WINDOW_SIDE_LENGTH + 5);
 	textNext.setFillColor(sf::Color::White);
@@ -58,6 +101,8 @@ int main(int argc, char* argv[])
 					run_state = !run_state;
 				if (event.key.code == sf::Keyboard::R)
 					randomize(grid, N_CELLS);
+				if (event.key.code == sf::Keyboard::C)
+					clear(grid, N_CELLS);
 				break;
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Left)
@@ -68,7 +113,6 @@ int main(int argc, char* argv[])
 						grid[x + y * GRID_DIMENSION] = !grid[x + y * GRID_DIMENSION];
 				}
 				break;
-
 			}
 		}
 
