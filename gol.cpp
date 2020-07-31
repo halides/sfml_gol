@@ -6,50 +6,63 @@ class GoL
 {
 	public:
 		GoL(int);
+		~GoL();
 		void step();
 		void clear();
 		void randomize();
 		bool get_cell_state(int, int);
-		void set_cell_state(int, int);
+		void flip_cell_state(int, int);
 
 	private:
 		int dimension;
-		
+		unsigned char* grid;
+		unsigned char* temp_grid;
 };
 
 GoL::GoL(int size)
 {
-	
+	dimension = size;
+	grid = new unsigned char[size*size];
+	temp_grid = new unsigned char[size*size];
 }
 
-GoL::step(char* grid, char* gridNext, int size)
+GoL::~GoL()
 {
-	for (int i = 0; i < size; i++)
-		grid[i] = gridNext[i];
+	delete[] grid;
+	delete[] temp_grid;
 }
 
-GoL::clear(char* grid, int size)
+void GoL::step()
 {
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < dimension*dimension; i++)
+		grid[i] = temp_grid[i];
+}
+
+void GoL::clear()
+{
+	for (int i = 0; i < dimension*dimension; i++)
 		grid[i] = 0;
 }
 
-GoL::randomize(char* grid, int size)
+void GoL::randomize()
 {
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist(1,10);
 
-	for (int i = 0; i < size; i++)
-		grid[i] = (dist(rng) == 1) ? 1 : 0;
+	for (int i = 0; i < dimension*dimension; i++)
+		grid[i] = (dist(rng) < 3) ? 1 : 0;
 }
 
 bool GoL::get_cell_state(int x, int y)
 {
+	return grid[x+y*dimension] & 1;
 }
 
-bool GoL::set_cell_state(int x, int y)
+void GoL::flip_cell_state(int x, int y)
 {
+	unsigned char state = grid[x+y*dimension];
+	grid[x+y*dimension] = get_cell_state(x,y)? state &= ~0x01 : state |= 0x01;
 }
 
 int main(int argc, char* argv[]) 
@@ -68,9 +81,9 @@ int main(int argc, char* argv[])
 	const int N_CELLS = GRID_DIMENSION*GRID_DIMENSION;
 	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
 	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
-	char grid[N_CELLS] = {};
-	char gridNext[N_CELLS] = {};
 	bool run_state = false;
+
+	GoL gol(GRID_DIMENSION);
 
 	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 110), "Game of Life");
 
@@ -94,15 +107,15 @@ int main(int argc, char* argv[])
 				break;
 			case sf::Event::KeyPressed:
 				if (event.key.code == sf::Keyboard::N)
-					step(grid, gridNext, N_CELLS);
+					gol.step();
 				if (event.key.code == sf::Keyboard::Q)
 					window.close();
 				if (event.key.code == sf::Keyboard::P)
 					run_state = !run_state;
 				if (event.key.code == sf::Keyboard::R)
-					randomize(grid, N_CELLS);
+					gol.randomize();
 				if (event.key.code == sf::Keyboard::C)
-					clear(grid, N_CELLS);
+					gol.clear();
 				break;
 			case sf::Event::MouseButtonPressed:
 				if (event.mouseButton.button == sf::Mouse::Left)
@@ -110,7 +123,7 @@ int main(int argc, char* argv[])
 					int x = double(event.mouseButton.x)/CELL_SIZE;
 					int y = double(event.mouseButton.y)/CELL_SIZE;
 					if (x >= 0 && x < GRID_DIMENSION && y >= 0 && y < GRID_DIMENSION)
-						grid[x + y * GRID_DIMENSION] = !grid[x + y * GRID_DIMENSION];
+						gol.flip_cell_state(x, y);
 				}
 				break;
 			}
@@ -124,33 +137,17 @@ int main(int argc, char* argv[])
 				sf::RectangleShape cell;
 				cell.setPosition(x * CELL_SIZE, y * CELL_SIZE);
 				cell.setSize(CELL_VECTOR);
-				if (grid[x + y * GRID_DIMENSION] == 1)
+				if (gol.get_cell_state(x, y) == 1)
 					cell.setFillColor(sf::Color::White);
 				else
 					cell.setFillColor(sf::Color::Black);
 				window.draw(cell);
-
-				//something funny going on at the edges :------)
-				int neighborSum = 0;
-				for (int i = -1; i < 2; i++)
-					for (int j = -1; j < 2; j++)
-					{   
-						neighborSum += grid[x+i + (y+j) * GRID_DIMENSION];
-					}
-
-				int current = x + y * GRID_DIMENSION;
-				neighborSum -= grid[current];
-				gridNext[current] = grid[current];
-				if (grid[current] == 1 && (neighborSum < 2 || neighborSum > 3))
-					gridNext[current] = 0;
-				else if (neighborSum == 3)
-					gridNext[current] = 1;
 			}
 
 		}
 
 		if (run_state) {
-			step(grid, gridNext, N_CELLS);
+			gol.step();
 		}
 		window.draw(textNext);
 		window.display();
