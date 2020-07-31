@@ -34,8 +34,28 @@ GoL::~GoL()
 
 void GoL::step()
 {
-	for (int i = 0; i < dimension*dimension; i++)
-		grid[i] = temp_grid[i];
+	for (int i = 0; i < dimension; i++) {
+		for (int j = 0; j < dimension; j++) {
+			unsigned char neighbor_sum = 0;
+			for (int k = -1; k < 2; k++) {
+				for (int l = -1; l < 2; l++) {
+					int where = i+k+(j*dimension)+(l*dimension);
+					if (!(k==0 && l==0) && where > -1 && where < dimension*dimension) {
+						neighbor_sum += grid[where] & 0x01 ? 1 : 0;	
+					}
+				}
+			}
+			if (get_cell_state(i,j) && (neighbor_sum == 2 || neighbor_sum == 3))
+				temp_grid[i+j*dimension] |= 0x01;
+			else if (!get_cell_state(i,j) && neighbor_sum == 3)
+				temp_grid[i+j*dimension] |= 0x01;
+			else
+				temp_grid[i+j*dimension] &= ~0x01;
+		}
+	}
+	unsigned char* tmp = grid;
+	grid = temp_grid;
+	temp_grid = tmp;
 }
 
 void GoL::clear()
