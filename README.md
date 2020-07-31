@@ -10,3 +10,6 @@ I'll try to commit often and add some tags when those make sense so you can get 
 
 v0.1:
 A naive, C-style solution that gets 0 points for design, structure, language features, error checking, comments, testability or documentation. I however think the implementation is clear and usable. There's a bug though but I need to run off to work. About 3 hours of development time here.
+
+v0.2:
+Overhauled (most of) business logic to a class. However stepping to the next generation is still a stub.
