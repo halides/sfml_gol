@@ -34,15 +34,21 @@ GoL::~GoL()
 
 void GoL::step()
 {
-	for (int i = 0; i < dimension; i++) {
-		for (int j = 0; j < dimension; j++) {
+	for (int j = 0; j < dimension; j++) {
+		for (int i = 0; i < dimension; i++) {
 			unsigned char neighbor_sum = 0;
-			for (int k = -1; k < 2; k++) {
-				for (int l = -1; l < 2; l++) {
+			for (char k = -1; k < 2; k++) {
+				for (char l = -1; l < 2; l++) {
+					if (k==0 && l ==0) continue;
 					int where = i+k+(j*dimension)+(l*dimension);
-					if (!(k==0 && l==0) && where > -1 && where < dimension*dimension) {
-						neighbor_sum += grid[where] & 0x01 ? 1 : 0;	
-					}
+
+					if ((j == 0) && (l == -1)) where += dimension*(dimension);
+					else if ((j == (dimension-1)) && (l == 1)) where -= dimension*(dimension);
+
+					if (i == 0 && k == -1) where += dimension;
+					if (i == (dimension-1) && k == 1) where -= dimension;
+
+					neighbor_sum += grid[where] & 0x01 ? 1 : 0;	
 				}
 			}
 			if (get_cell_state(i,j) && (neighbor_sum == 2 || neighbor_sum == 3))
@@ -110,10 +116,14 @@ int main(int argc, char* argv[])
 	sf::Font font;
 	font.loadFromFile("./fonts/arial.ttf");
 
-	sf::Text textNext("Press 'n' to step,\n'p' to play/pause,\n'c' to clear,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
-	textNext.setCharacterSize(15);
-	textNext.setPosition(10, WINDOW_SIDE_LENGTH + 5);
-	textNext.setFillColor(sf::Color::White);
+	sf::Text text("Press 'n' to step,\n'p' to play/pause,\n'c' to clear,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
+	sf::Text textRunning("Playing", font);
+	text.setCharacterSize(15);
+	text.setPosition(10, WINDOW_SIDE_LENGTH + 5);
+	text.setFillColor(sf::Color::White);
+
+	textRunning.setPosition(200, WINDOW_SIDE_LENGTH + 5);
+	textRunning.setFillColor(sf::Color::White);
 
 	while (window.isOpen())
 	{
@@ -168,8 +178,9 @@ int main(int argc, char* argv[])
 
 		if (run_state) {
 			gol.step();
+			window.draw(textRunning);
 		}
-		window.draw(textNext);
+		window.draw(text);
 		window.display();
         sf::sleep(sf::milliseconds(50));
 	}
