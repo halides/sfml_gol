@@ -13,3 +13,8 @@ A naive, C-style solution that gets 0 points for design, structure, language fea
 
 v0.2:
 Overhauled (most of) business logic to a class. However stepping to the next generation is still a stub. About 4.5 hours development in total here.
+
+v0.3:
+Stepping works and decided to go with wrapping instead of an infinite grid. "Feature complete" from my point of view, needs refactoring and documentation. About 6 hours of development 'cos wrapping was such a mess of small bugs to get working :-p.
+
+
