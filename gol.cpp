@@ -1,25 +1,7 @@
-#include <SFML/Graphics.hpp>
-#include <iostream>
+#include "gol.h"
 #include <random>
 
-class GoL
-{
-	public:
-		GoL(int);
-		~GoL();
-		void step();
-		void clear();
-		void randomize();
-		bool get_cell_state(int, int);
-		void flip_cell_state(int, int);
-
-	private:
-		int dimension;
-		unsigned char* grid;
-		unsigned char* temp_grid;
-};
-
-GoL::GoL(int size)
+GoL::GoL(unsigned int size)
 {
 	dimension = size;
 	grid = new unsigned char[size*size];
@@ -34,23 +16,25 @@ GoL::~GoL()
 
 void GoL::step()
 {
-	for (int j = 0; j < dimension; j++) {
-		for (int i = 0; i < dimension; i++) {
+	for (unsigned int j = 0; j < dimension; j++) {
+		for (unsigned int i = 0; i < dimension; i++) {
+
 			unsigned char neighbor_sum = 0;
 			for (char k = -1; k < 2; k++) {
 				for (char l = -1; l < 2; l++) {
 					if (k==0 && l ==0) continue;
-					int where = i+k+(j*dimension)+(l*dimension);
+					unsigned int where = i+k+(j*dimension)+(l*dimension);
 
 					if ((j == 0) && (l == -1)) where += dimension*(dimension);
 					else if ((j == (dimension-1)) && (l == 1)) where -= dimension*(dimension);
 
 					if (i == 0 && k == -1) where += dimension;
-					if (i == (dimension-1) && k == 1) where -= dimension;
+					else if (i == (dimension-1) && k == 1) where -= dimension;
 
 					neighbor_sum += grid[where] & 0x01 ? 1 : 0;	
 				}
 			}
+
 			if (get_cell_state(i,j) && (neighbor_sum == 2 || neighbor_sum == 3))
 				temp_grid[i+j*dimension] |= 0x01;
 			else if (!get_cell_state(i,j) && neighbor_sum == 3)
@@ -59,6 +43,7 @@ void GoL::step()
 				temp_grid[i+j*dimension] &= ~0x01;
 		}
 	}
+
 	unsigned char* tmp = grid;
 	grid = temp_grid;
 	temp_grid = tmp;
@@ -72,116 +57,21 @@ void GoL::clear()
 
 void GoL::randomize()
 {
-    std::random_device dev;
-    std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(1,10);
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_int_distribution<std::mt19937::result_type> dist(1,10);
 
 	for (int i = 0; i < dimension*dimension; i++)
 		grid[i] = (dist(rng) < 3) ? 1 : 0;
 }
 
-bool GoL::get_cell_state(int x, int y)
+bool GoL::get_cell_state(unsigned int x, unsigned int y)
 {
 	return grid[x+y*dimension] & 1;
 }
 
-void GoL::flip_cell_state(int x, int y)
+void GoL::flip_cell_state(unsigned int x, unsigned int y)
 {
 	unsigned char state = grid[x+y*dimension];
 	grid[x+y*dimension] = get_cell_state(x,y)? state &= ~0x01 : state |= 0x01;
-}
-
-int main(int argc, char* argv[]) 
-{
-	int GRID_DIMENSION;
-    int CELL_SIZE;
-
-	try {
-		GRID_DIMENSION = std::stoi(argv[1]);
-		CELL_SIZE = std::stoi(argv[2]);
-	} catch(...) {
-		std::cout << "Usage: ./gol <grid dimension> <pixels per cell>, both as integers\n";
-		return 1;
-	}
-
-	const int N_CELLS = GRID_DIMENSION*GRID_DIMENSION;
-	const int WINDOW_SIDE_LENGTH = GRID_DIMENSION * CELL_SIZE;
-	const sf::Vector2f CELL_VECTOR(CELL_SIZE, CELL_SIZE);
-	bool run_state = false;
-
-	GoL gol(GRID_DIMENSION);
-
-	sf::RenderWindow window(sf::VideoMode(WINDOW_SIDE_LENGTH,WINDOW_SIDE_LENGTH + 110), "Game of Life");
-
-	sf::Font font;
-	font.loadFromFile("./fonts/arial.ttf");
-
-	sf::Text text("Press 'n' to step,\n'p' to play/pause,\n'c' to clear,\n'r' to randomize,\n'q' to quit,\nLMB to flip cell states.", font);
-	sf::Text textRunning("Playing", font);
-	text.setCharacterSize(15);
-	text.setPosition(10, WINDOW_SIDE_LENGTH + 5);
-	text.setFillColor(sf::Color::White);
-
-	textRunning.setPosition(200, WINDOW_SIDE_LENGTH + 5);
-	textRunning.setFillColor(sf::Color::White);
-
-	while (window.isOpen())
-	{
-		sf::Event event;
-		while (window.pollEvent(event))
-		{
-			switch(event.type)
-			{
-			case sf::Event::Closed:
-				window.close();
-				break;
-			case sf::Event::KeyPressed:
-				if (event.key.code == sf::Keyboard::N)
-					gol.step();
-				if (event.key.code == sf::Keyboard::Q)
-					window.close();
-				if (event.key.code == sf::Keyboard::P)
-					run_state = !run_state;
-				if (event.key.code == sf::Keyboard::R)
-					gol.randomize();
-				if (event.key.code == sf::Keyboard::C)
-					gol.clear();
-				break;
-			case sf::Event::MouseButtonPressed:
-				if (event.mouseButton.button == sf::Mouse::Left)
-				{ 
-					int x = double(event.mouseButton.x)/CELL_SIZE;
-					int y = double(event.mouseButton.y)/CELL_SIZE;
-					if (x >= 0 && x < GRID_DIMENSION && y >= 0 && y < GRID_DIMENSION)
-						gol.flip_cell_state(x, y);
-				}
-				break;
-			}
-		}
-
-		window.clear();
-		for (int x = 0; x < GRID_DIMENSION; x++)
-		{ 
-			for (int y = 0; y < GRID_DIMENSION; y++)
-			{ 
-				sf::RectangleShape cell;
-				cell.setPosition(x * CELL_SIZE, y * CELL_SIZE);
-				cell.setSize(CELL_VECTOR);
-				if (gol.get_cell_state(x, y) == 1)
-					cell.setFillColor(sf::Color::White);
-				else
-					cell.setFillColor(sf::Color::Black);
-				window.draw(cell);
-			}
-
-		}
-
-		if (run_state) {
-			gol.step();
-			window.draw(textRunning);
-		}
-		window.draw(text);
-		window.display();
-        sf::sleep(sf::milliseconds(50));
-	}
 }
