@@ -1,10 +1,10 @@
 #pragma once
+#include <vector>
 
 class GoL
 {
 	public:
 		GoL(unsigned int);
-		~GoL();
 		void step();
 		void clear();
 		void randomize();
@@ -13,6 +13,6 @@ class GoL
 
 	private:
 		int dimension;
-		unsigned char* grid;
-		unsigned char* temp_grid;
+		std::vector<std::vector<bool>> grid;
+		std::vector<std::vector<bool>> temp_grid;
 };
